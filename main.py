@@ -1,4 +1,5 @@
-# import stuff here
+import time
+
 game_vars = {
     "turn": 0,
     "coins": 10,
@@ -6,9 +7,18 @@ game_vars = {
 }
 
 
+# Separate console output into chunks for readability
+def await_user():
+    print()
+    time.sleep(.25)
+
+
+# Get input from the user, validate before returning
 def get_input(max_options):
+    # Input must be valid before returning, otherwise loop
     while True:
         option = input("Your choice? ")
+        # Verification: input is a digit within the allowed range
         if option.isdigit():
             option = int(option)
             if 1 <= option <= max_options:
@@ -17,6 +27,7 @@ def get_input(max_options):
                 print(f"Choice must be between 1 and {max_options}.")
         else:
             print("Choice must be a number.")
+        await_user()
 
 
 def show_main_menu():
@@ -24,14 +35,32 @@ def show_main_menu():
     print("2. Load saved game")
     print("3. High Scores")
     print("4. Quit")
+    await_user()
     # Get what user wants to do
     option = get_input(4)
     return option
 
 
 def show_high_scores():
-    # TODO: implement the high score system
-    pass
+    try:
+        with open('high_scores.txt', 'r') as file:
+            # Read the content of the file
+            scores = [line.strip().split() for line in file.readlines()]
+
+        if not scores:
+            print("No high scores available.")
+            return
+
+        print("\nHigh Scores")
+        for name, score in scores:
+            print(f"{name:15}: {score}")
+
+    except FileNotFoundError:
+        print("High scores file not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    await_user()
 
 
 # Main game loop, displays main menu then changes game state if a game has been started
