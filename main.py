@@ -91,6 +91,10 @@ def draw_field():
 
     await_user()
 
+    building_given()
+
+    await_user()
+
 
 def show_building_types():
     # Print options
@@ -104,11 +108,14 @@ def show_building_types():
 
 
 def building_given():
-    # Randomly pick 2 out of 5 building types (Not implemented yet)
+    buildingList = ["Commercial", "Industry", "Park", "Residential", "Road"]
+    random_building = random.sample(buildingList, 2)
+    #print(random_building) # For debugging purposes
+
     print("You have been offered")
     print("---------------------")
-    print("[1]")
-    print("[2]")
+    print("[1]", random_building[0])
+    print("[2]", random_building[1])
     print()
     print("Choose your option (1 or 2):")
     option = get_input(2)
@@ -122,6 +129,55 @@ def show_building_menu(game_vars):
     # Get what user wants to do
     option = get_input(5)
     return option
+
+def place_unit(field, position, unit_name):
+    # Declare local variables needed for both defenders and monsters
+    pos_validity = False
+    row_num = ord(position[0])-65
+    col_num = int(position[-1])-1
+    num_rows = len(field)
+    num_cols = len(field[0])
+    ## Check if coordinates within the board
+    #if row_num <= num_rows and row_num >= 0:
+    #    if col_num <= num_cols and col_num >= 0:
+    #        # Check if position is empty
+    #        if field[row_num][col_num] == None:
+                # Check if a building exists
+
+                #if unit_name in defenders:
+                #    if col_num < 3 or unit_name == 'MINE':
+                #        # Initalise defender and set it on the field
+                #        unit = {}
+                #        unit['name'] = defenders[unit_name]['name']
+                #        unit['short_name'] = defenders[unit_name]['short_name']
+                #        unit['maxHP'] = defenders[unit_name]['maxHP']
+                #        unit['HP'] = defenders[unit_name]['maxHP']
+                #        unit['min_damage'] = defenders[unit_name]['min_damage']
+                #        unit['max_damage'] = defenders[unit_name]['max_damage']
+                #        unit['price'] = defenders[unit_name]['price'] + 3
+                #        # Special case: cannons need to keep track of when they fire
+                #        if unit['short_name'] == 'CANON':
+                #            if game_vars['turn'] % 2 == 0:
+                #                unit['fire_cycle'] = 'even'
+                #            else:
+                #                unit['fire_cycle'] = 'odd'
+                #        field[row_num][col_num] = unit
+                #        pos_validity = True
+                #        # Immediately activate unit if needed
+                #        if unit_name == 'HEAL':
+                #            defender_attack('Heal/Repair', field, row_num, col_num)
+                #else: # Initalise monster and set it on the field
+                #    unit = {}
+                #    unit['name'] = monsters[unit_name]['name']
+                #    unit['short_name'] = monsters[unit_name]['short_name']
+                #    unit['maxHP'] = monsters[unit_name]['maxHP']
+                #    unit['HP'] = monsters[unit_name]['maxHP']
+                #    unit['min_damage'] = monsters[unit_name]['min_damage']
+                #    unit['max_damage'] = monsters[unit_name]['max_damage']
+                #    unit['reward'] = monsters[unit_name]['reward']
+                #    field[row_num][col_num] = unit
+                #    pos_validity = True
+    return pos_validity
 
 
 def show_high_scores():
