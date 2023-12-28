@@ -41,26 +41,9 @@ def show_main_menu():
     option = get_input(4)
     return option
 
-field = [ [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None],
-          [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] ]
+
+field = [[None for _ in range(20)] for _ in range(20)]
+
 
 def draw_field():
     num_rows = len(field)
@@ -73,13 +56,13 @@ def draw_field():
     # Print each row
     for row_num in range(num_rows):
         # Print line that shows names and row alphabets
-        print(f" {chr(row_num+65)}|",end='')
+        print(f" {chr(row_num + 65)}|", end='')
         for col_num in range(num_cols):
-            print('     |',end='')
+            print('     |', end='')
         # Print line that shows unit health
-        print(f"\n  |",end='')
+        print(f"\n  |", end='')
         for col_num in range(num_cols):
-            print('     |',end='')
+            print('     |', end='')
         # Close off row with last line
         print('\n  +' + '-----+' * num_cols)
 
@@ -110,7 +93,7 @@ def show_building_types():
 def building_given():
     buildingList = ["Commercial", "Industry", "Park", "Residential", "Road"]
     random_building = random.sample(buildingList, 2)
-    #print(random_building) # For debugging purposes
+    # print(random_building) # For debugging purposes
 
     print("You have been offered")
     print("---------------------")
@@ -130,53 +113,54 @@ def show_building_menu(game_vars):
     option = get_input(5)
     return option
 
+
 def place_unit(field, position, unit_name):
     # Declare local variables needed for both defenders and monsters
     pos_validity = False
-    row_num = ord(position[0])-65
-    col_num = int(position[-1])-1
+    row_num = ord(position[0]) - 65
+    col_num = int(position[-1]) - 1
     num_rows = len(field)
     num_cols = len(field[0])
     ## Check if coordinates within the board
-    #if row_num <= num_rows and row_num >= 0:
+    # if row_num <= num_rows and row_num >= 0:
     #    if col_num <= num_cols and col_num >= 0:
     #        # Check if position is empty
     #        if field[row_num][col_num] == None:
-                # Check if a building exists
+    # Check if a building exists
 
-                #if unit_name in defenders:
-                #    if col_num < 3 or unit_name == 'MINE':
-                #        # Initalise defender and set it on the field
-                #        unit = {}
-                #        unit['name'] = defenders[unit_name]['name']
-                #        unit['short_name'] = defenders[unit_name]['short_name']
-                #        unit['maxHP'] = defenders[unit_name]['maxHP']
-                #        unit['HP'] = defenders[unit_name]['maxHP']
-                #        unit['min_damage'] = defenders[unit_name]['min_damage']
-                #        unit['max_damage'] = defenders[unit_name]['max_damage']
-                #        unit['price'] = defenders[unit_name]['price'] + 3
-                #        # Special case: cannons need to keep track of when they fire
-                #        if unit['short_name'] == 'CANON':
-                #            if game_vars['turn'] % 2 == 0:
-                #                unit['fire_cycle'] = 'even'
-                #            else:
-                #                unit['fire_cycle'] = 'odd'
-                #        field[row_num][col_num] = unit
-                #        pos_validity = True
-                #        # Immediately activate unit if needed
-                #        if unit_name == 'HEAL':
-                #            defender_attack('Heal/Repair', field, row_num, col_num)
-                #else: # Initalise monster and set it on the field
-                #    unit = {}
-                #    unit['name'] = monsters[unit_name]['name']
-                #    unit['short_name'] = monsters[unit_name]['short_name']
-                #    unit['maxHP'] = monsters[unit_name]['maxHP']
-                #    unit['HP'] = monsters[unit_name]['maxHP']
-                #    unit['min_damage'] = monsters[unit_name]['min_damage']
-                #    unit['max_damage'] = monsters[unit_name]['max_damage']
-                #    unit['reward'] = monsters[unit_name]['reward']
-                #    field[row_num][col_num] = unit
-                #    pos_validity = True
+    # if unit_name in defenders:
+    #    if col_num < 3 or unit_name == 'MINE':
+    #        # Initalise defender and set it on the field
+    #        unit = {}
+    #        unit['name'] = defenders[unit_name]['name']
+    #        unit['short_name'] = defenders[unit_name]['short_name']
+    #        unit['maxHP'] = defenders[unit_name]['maxHP']
+    #        unit['HP'] = defenders[unit_name]['maxHP']
+    #        unit['min_damage'] = defenders[unit_name]['min_damage']
+    #        unit['max_damage'] = defenders[unit_name]['max_damage']
+    #        unit['price'] = defenders[unit_name]['price'] + 3
+    #        # Special case: cannons need to keep track of when they fire
+    #        if unit['short_name'] == 'CANON':
+    #            if game_vars['turn'] % 2 == 0:
+    #                unit['fire_cycle'] = 'even'
+    #            else:
+    #                unit['fire_cycle'] = 'odd'
+    #        field[row_num][col_num] = unit
+    #        pos_validity = True
+    #        # Immediately activate unit if needed
+    #        if unit_name == 'HEAL':
+    #            defender_attack('Heal/Repair', field, row_num, col_num)
+    # else: # Initalise monster and set it on the field
+    #    unit = {}
+    #    unit['name'] = monsters[unit_name]['name']
+    #    unit['short_name'] = monsters[unit_name]['short_name']
+    #    unit['maxHP'] = monsters[unit_name]['maxHP']
+    #    unit['HP'] = monsters[unit_name]['maxHP']
+    #    unit['min_damage'] = monsters[unit_name]['min_damage']
+    #    unit['max_damage'] = monsters[unit_name]['max_damage']
+    #    unit['reward'] = monsters[unit_name]['reward']
+    #    field[row_num][col_num] = unit
+    #    pos_validity = True
     return pos_validity
 
 
@@ -226,103 +210,102 @@ if __name__ == "__main__":
             # TODO: implement turn-to-turn gameplay logic
             pass
 
-
-#-----------------------------------------
+# -----------------------------------------
 # save_game()
 #
 #    Saves the game in the file 'save.txt'
-#-----------------------------------------
-#def save_game():
-    #file = open('save.txt', 'w')
-    # Store game_vars 
-    #for var in game_vars.values():
-        #file.write(str(var))
-        #file.write(',')
-    #file.write('\n\n')
-    # Then store field
-    #for row in field:
-        #for unit in row:
-            #if unit:
-                #for attribute in unit.values():
-                    #file.write(str(attribute))
-                    #file.write(',')
-            #else:
-                #file.write('None')
-            #file.write(';')
-        #file.write('\n')
-    #file.write('\n')
-    # Then save player settings
-    #for setting in player_defined_vars.values():
-        #file.write(str(setting[0]))
-        #file.write(',')
-    #print("Game saved.")
-    #file.close()
+# -----------------------------------------
+# def save_game():
+# file = open('save.txt', 'w')
+# Store game_vars
+# for var in game_vars.values():
+# file.write(str(var))
+# file.write(',')
+# file.write('\n\n')
+# Then store field
+# for row in field:
+# for unit in row:
+# if unit:
+# for attribute in unit.values():
+# file.write(str(attribute))
+# file.write(',')
+# else:
+# file.write('None')
+# file.write(';')
+# file.write('\n')
+# file.write('\n')
+# Then save player settings
+# for setting in player_defined_vars.values():
+# file.write(str(setting[0]))
+# file.write(',')
+# print("Game saved.")
+# file.close()
 
-#-----------------------------------------
+# -----------------------------------------
 # load_game()
 #
 #    Loads the game from 'save.txt'
-#-----------------------------------------
-#def load_game(game_vars):
-    #try:
-        #file = open('save.txt')
-    #except FileNotFoundError:
-        #print('No save file to load from.')
-        #return False
-    #file_list = file.read().split('\n\n')
-    #setting_list = file_list.pop().split(',')[:-1]
-    #field_list = file_list.pop().split('\n')
-    #var_list = file_list.pop().split(',')[:-1]
-    # Load in game_vars from save
-    #count = 0
-    #for var in game_vars:
-        #if var_list[count].isdigit():
-            #game_vars[var] = int(var_list[count])
-        #elif var_list[count] == 'False':
-            #game_vars[var] = False
-        #elif var_list[count] == 'True':
-            #game_vars[var] = True 
-        #count += 1
-    # Ready vars for use
-    #game_vars['turn'] -= 1
-    #for i in range(game_vars['danger_level']-1):
-        #for monster in monsters.values():
-            #monster['maxHP'] += 1
-            #monster['min_damage'] += 1
-            #monster['max_damage'] += 1
-            #monster['reward'] += 1
-    # Load in player settings and change other stuff using them
-    #count = 0
-    #for var in player_defined_vars:
-        #player_defined_vars[var][0] = int(setting_list[count])
-        #count += 1
-    #global field
-    #field = []
-    #for row in range(player_defined_vars['board_width'][0]):
-        #field.append([])
-        #for column in range(player_defined_vars['board_length'][0]):
-            #field[row].append(None)
-    # Load in field from save
-    #for row_num in range(len(field_list)):
-        #load_row = field_list[row_num].split(';')[:-1]
-        #for col_num in range(len(load_row)):
-            #load_space = load_row[col_num].split(',')
-            #if load_space[0] != 'None':
-                #unit = {}
-                #unit['name'] = load_space[0]
-                #unit['short_name'] = load_space[1]
-                #unit['maxHP'] = int(load_space[2])
-                #unit['HP'] = int(load_space[3])
-                #unit['min_damage'] = int(load_space[4])
-                #unit['max_damage'] = int(load_space[5])
-                #if unit['short_name'] in defenders:
-                    #unit['price'] = int(load_space[6])
-                    #if unit['short_name'] == 'CANON':
-                        #unit['fire_cycle'] = load_space[7]
-                #else:
-                    #unit['reward'] = int(load_space[6])
-                #field[row_num][col_num] = unit
-            #else:
-                #field[row_num][col_num] = None
-    #file.close()
-    #return True
+# -----------------------------------------
+# def load_game(game_vars):
+# try:
+# file = open('save.txt')
+# except FileNotFoundError:
+# print('No save file to load from.')
+# return False
+# file_list = file.read().split('\n\n')
+# setting_list = file_list.pop().split(',')[:-1]
+# field_list = file_list.pop().split('\n')
+# var_list = file_list.pop().split(',')[:-1]
+# Load in game_vars from save
+# count = 0
+# for var in game_vars:
+# if var_list[count].isdigit():
+# game_vars[var] = int(var_list[count])
+# elif var_list[count] == 'False':
+# game_vars[var] = False
+# elif var_list[count] == 'True':
+# game_vars[var] = True
+# count += 1
+# Ready vars for use
+# game_vars['turn'] -= 1
+# for i in range(game_vars['danger_level']-1):
+# for monster in monsters.values():
+# monster['maxHP'] += 1
+# monster['min_damage'] += 1
+# monster['max_damage'] += 1
+# monster['reward'] += 1
+# Load in player settings and change other stuff using them
+# count = 0
+# for var in player_defined_vars:
+# player_defined_vars[var][0] = int(setting_list[count])
+# count += 1
+# global field
+# field = []
+# for row in range(player_defined_vars['board_width'][0]):
+# field.append([])
+# for column in range(player_defined_vars['board_length'][0]):
+# field[row].append(None)
+# Load in field from save
+# for row_num in range(len(field_list)):
+# load_row = field_list[row_num].split(';')[:-1]
+# for col_num in range(len(load_row)):
+# load_space = load_row[col_num].split(',')
+# if load_space[0] != 'None':
+# unit = {}
+# unit['name'] = load_space[0]
+# unit['short_name'] = load_space[1]
+# unit['maxHP'] = int(load_space[2])
+# unit['HP'] = int(load_space[3])
+# unit['min_damage'] = int(load_space[4])
+# unit['max_damage'] = int(load_space[5])
+# if unit['short_name'] in defenders:
+# unit['price'] = int(load_space[6])
+# if unit['short_name'] == 'CANON':
+# unit['fire_cycle'] = load_space[7]
+# else:
+# unit['reward'] = int(load_space[6])
+# field[row_num][col_num] = unit
+# else:
+# field[row_num][col_num] = None
+# file.close()
+# return True
