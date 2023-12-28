@@ -4,8 +4,11 @@ import time
 game_vars = {
     "turn": 0,
     "coins": 10,
+    "points": 0,
     "game_over": False,
 }
+
+field = [[' ' for _ in range(20)] for _ in range(20)]
 
 
 # Separate console output into chunks for readability
@@ -42,41 +45,21 @@ def show_main_menu():
     return option
 
 
-field = [[None for _ in range(20)] for _ in range(20)]
-
-
-def draw_field():
-    num_rows = len(field)
-    num_cols = len(field[0])
+def draw_field(loc_game_vars, loc_field):
+    # Get data from loc_game_vars and loc_field to store locally
+    turn = loc_game_vars['turn']
+    coins = loc_game_vars['coins']
+    points = loc_game_vars['points']
+    num_rows, num_cols = len(loc_field), len(loc_field[0])
     # Print column numbers and top line
-    print('     ')
-    for i in range(len(field[0])):
-        print(f'{i + 1:6}', end='')
-    print('\n  +' + '-----+' * num_cols)
+    print(' ' + ''.join(f'{i + 1:>3}' for i in range(num_cols)))
+    print(' +' + '--+' * num_cols)
     # Print each row
-    for row_num in range(num_rows):
-        # Print line that shows names and row alphabets
-        print(f" {chr(row_num + 65)}|", end='')
-        for col_num in range(num_cols):
-            print('     |', end='')
-        # Print line that shows unit health
-        print(f"\n  |", end='')
-        for col_num in range(num_cols):
-            print('     |', end='')
-        # Close off row with last line
-        print('\n  +' + '-----+' * num_cols)
-
-    print("  Coins: " + "Points: " + "Turn: ")
-
-    await_user()
-
-    show_building_types()
-
-    await_user()
-
-    building_given()
-
-    await_user()
+    for row_num, row in enumerate(loc_field):
+        print(f"{chr(row_num + 65)}|{'|'.join([f'{cell:>2}' for cell in row])}|")
+        print(' +' + '--+' * num_cols)
+    # Print stats
+    print(f"{'Turn: ' + str(turn):<15}{'Points: ' + str(points):<15}{'Coins: ' + str(coins)}")
 
 
 def show_building_types():
@@ -121,7 +104,7 @@ def place_unit(field, position, unit_name):
     col_num = int(position[-1]) - 1
     num_rows = len(field)
     num_cols = len(field[0])
-    ## Check if coordinates within the board
+    # # Check if coordinates within the board
     # if row_num <= num_rows and row_num >= 0:
     #    if col_num <= num_cols and col_num >= 0:
     #        # Check if position is empty
@@ -186,6 +169,20 @@ def show_high_scores():
     await_user()
 
 
+def run_turn(loc_game_vars):
+    # PRE-TURN PHASE
+    loc_game_vars['turn'] += 1
+    draw_field(game_vars, field)
+
+    # BUY PHASE
+    # TODO: move player actions here from draw_field()
+
+    # CLEANUP PHASE
+    # TODO: recalculate score, autosave
+
+    await_user()
+
+
 # Main game loop, displays main menu then changes game state if a game has been started
 if __name__ == "__main__":
     while True:
@@ -197,7 +194,7 @@ if __name__ == "__main__":
             main_option = show_main_menu()
 
             if main_option == 1:
-                game_playing = draw_field()
+                game_playing = True
                 # TODO: initialise game
             elif main_option == 2:  # TODO: add load_game(game_vars) to this condition later
                 game_playing = not game_playing
@@ -208,7 +205,7 @@ if __name__ == "__main__":
 
         while not game_vars["game_over"]:
             # TODO: implement turn-to-turn gameplay logic
-            pass
+            run_turn(game_vars)
 
 # -----------------------------------------
 # save_game()
