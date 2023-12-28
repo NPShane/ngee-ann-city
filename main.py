@@ -4,7 +4,7 @@ import time
 game_vars = {
     "turn": 0,
     "coins": 10,
-    "points": 0,
+    "score": 0,
     "game_over": False,
 }
 
@@ -98,53 +98,8 @@ def show_building_menu(game_vars):
 
 
 def place_unit(field, position, unit_name):
-    # Declare local variables needed for both defenders and monsters
-    pos_validity = False
-    row_num = ord(position[0]) - 65
-    col_num = int(position[-1]) - 1
-    num_rows = len(field)
-    num_cols = len(field[0])
-    # # Check if coordinates within the board
-    # if row_num <= num_rows and row_num >= 0:
-    #    if col_num <= num_cols and col_num >= 0:
-    #        # Check if position is empty
-    #        if field[row_num][col_num] == None:
-    # Check if a building exists
-
-    # if unit_name in defenders:
-    #    if col_num < 3 or unit_name == 'MINE':
-    #        # Initalise defender and set it on the field
-    #        unit = {}
-    #        unit['name'] = defenders[unit_name]['name']
-    #        unit['short_name'] = defenders[unit_name]['short_name']
-    #        unit['maxHP'] = defenders[unit_name]['maxHP']
-    #        unit['HP'] = defenders[unit_name]['maxHP']
-    #        unit['min_damage'] = defenders[unit_name]['min_damage']
-    #        unit['max_damage'] = defenders[unit_name]['max_damage']
-    #        unit['price'] = defenders[unit_name]['price'] + 3
-    #        # Special case: cannons need to keep track of when they fire
-    #        if unit['short_name'] == 'CANON':
-    #            if game_vars['turn'] % 2 == 0:
-    #                unit['fire_cycle'] = 'even'
-    #            else:
-    #                unit['fire_cycle'] = 'odd'
-    #        field[row_num][col_num] = unit
-    #        pos_validity = True
-    #        # Immediately activate unit if needed
-    #        if unit_name == 'HEAL':
-    #            defender_attack('Heal/Repair', field, row_num, col_num)
-    # else: # Initalise monster and set it on the field
-    #    unit = {}
-    #    unit['name'] = monsters[unit_name]['name']
-    #    unit['short_name'] = monsters[unit_name]['short_name']
-    #    unit['maxHP'] = monsters[unit_name]['maxHP']
-    #    unit['HP'] = monsters[unit_name]['maxHP']
-    #    unit['min_damage'] = monsters[unit_name]['min_damage']
-    #    unit['max_damage'] = monsters[unit_name]['max_damage']
-    #    unit['reward'] = monsters[unit_name]['reward']
-    #    field[row_num][col_num] = unit
-    #    pos_validity = True
-    return pos_validity
+    row, col = position
+    field[row][col] = building_name
 
 
 def show_high_scores():
@@ -182,6 +137,19 @@ def run_turn(loc_game_vars):
 
     await_user()
 
+def update_high_scores(score, player_name="Anonymous"):
+    try:
+        with open('high_scores.txt', 'a') as file:
+            file.write(f"{player_name} {score}\n")
+    except Exception as e:
+        print(f"An error occurred while updating high scores: {e}")
+
+
+def calculate_score():
+    # Implement the scoring logic based on the specified rules
+    # (Residential, Industry, Commercial, Park, Road effects)
+    pass
+
 
 # Main game loop, displays main menu then changes game state if a game has been started
 if __name__ == "__main__":
@@ -206,6 +174,49 @@ if __name__ == "__main__":
         while not game_vars["game_over"]:
             # TODO: implement turn-to-turn gameplay logic
             run_turn(game_vars)
+            # Playing the game
+            draw_field(loc_game_vars, loc_field)
+            print("\nOptions:")
+            print("1. Build a Building")
+            print("2. See Current Score")
+            print("3. Save Game")
+            print("4. Exit to Main Menu")
+
+            option = get_input(4)
+
+            if option == 1:
+                # Build a Building
+                show_building_types()
+                building_option = building_given()
+                row = int(input("Enter row (1-20): ")) - 1
+                col = int(input("Enter column (1-20): ")) - 1
+                place_building(field, (row, col), building_option)
+                game_vars["coins"] -= 1  # Decrement coins after building
+
+            elif option == 2:
+                # See Current Score
+                current_score = calculate_score()
+                print(f"Current Score: {current_score}")
+
+            elif option == 3:
+                # Save Game
+                save_game()
+
+            elif option == 4:
+                # Exit to Main Menu
+                game_vars["game_over"] = True
+
+        # End of Game
+        final_score = calculate_score()
+        print(f"Game Over! Final Score: {final_score}")
+
+        # Update high scores if necessary
+        if final_score > 0:
+            player_name = input("Congratulations! You made it to the top 10! Enter your name: ")
+            update_high_scores(final_score, player_name)
+
+        await_user()
+
 
 # -----------------------------------------
 # save_game()
