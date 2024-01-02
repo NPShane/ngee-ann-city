@@ -8,7 +8,15 @@ game_vars = {
     "game_over": False,
 }
 
-field = [[' ' for _ in range(20)] for _ in range(20)]
+field = [['' for _ in range(20)] for _ in range(20)]
+
+buildings = {
+    "Commercial": "C",
+    "Industry": "I",
+    "Park": "O",
+    "Residential": "R",
+    "Road": "*"
+}
 
 
 # Separate console output into chunks for readability
@@ -21,12 +29,12 @@ def await_user():
 def get_input(max_options):
     # Input must be valid before returning, otherwise loop
     while True:
-        option = input("Your choice? ")
+        loc_option = input("Your choice? ")
         # Verification: input is a digit within the allowed range
-        if option.isdigit():
-            option = int(option)
-            if 1 <= option <= max_options:
-                return option
+        if loc_option.isdigit():
+            loc_option = int(loc_option)
+            if 1 <= loc_option <= max_options:
+                return loc_option
             else:
                 print(f"Choice must be between 1 and {max_options}.")
         else:
@@ -34,6 +42,7 @@ def get_input(max_options):
         await_user()
 
 
+# Show main menu, gets input and returns selected option
 def show_main_menu():
     print("1. Start new game")
     print("2. Load saved game")
@@ -41,15 +50,15 @@ def show_main_menu():
     print("4. Quit")
     await_user()
     # Get what user wants to do
-    option = get_input(4)
-    return option
+    loc_option = get_input(4)
+    return loc_option
 
 
+# Draws field and relevant stats
 def draw_field(loc_game_vars, loc_field):
     # Get data from loc_game_vars and loc_field to store locally
     turn = loc_game_vars['turn']
     coins = loc_game_vars['coins']
-    points = loc_game_vars['points']
     num_rows, num_cols = len(loc_field), len(loc_field[0])
     # Print column numbers and top line
     print(' ' + ''.join(f'{i + 1:>3}' for i in range(num_cols)))
@@ -59,47 +68,73 @@ def draw_field(loc_game_vars, loc_field):
         print(f"{chr(row_num + 65)}|{'|'.join([f'{cell:>2}' for cell in row])}|")
         print(' +' + '--+' * num_cols)
     # Print stats
-    print(f"{'Turn: ' + str(turn):<15}{'Points: ' + str(points):<15}{'Coins: ' + str(coins)}")
+    print(f"{'Turn: ' + str(turn):<15}{'Coins: ' + str(coins)}")
 
 
-def show_building_types():
-    # Print options
-    print("Build a Building - Building Types Available")
-    print("-------------------------------------------")
-    print("Commercial - Cost: 1 coin")
-    print("Industry - Cost: 1 coin")
-    print("Park - Cost: 1 coin")
-    print("Residential - Cost: 1 coin")
-    print("Road - Cost: 1 coin")
-
-
-def building_given():
-    buildingList = ["Commercial", "Industry", "Park", "Residential", "Road"]
-    random_building = random.sample(buildingList, 2)
-    # print(random_building) # For debugging purposes
-
+def buy_building(loc_game_vars, loc_field):
+    # Print available buildings
+    building_list = [*buildings]  # Advanced syntax: get list of keys from dict
+    random_building = random.sample(building_list, 2)
     print("You have been offered")
     print("---------------------")
-    print("[1]", random_building[0])
-    print("[2]", random_building[1])
+    print("1.", random_building[0])
+    print("2.", random_building[1])
     print()
     print("Choose your option (1 or 2):")
-    option = get_input(2)
-    return option
+    # Get desired building
+    loc_option = get_input(2)
+    selected = random_building[loc_option - 1]
+    # Check sufficient coins
+    if loc_game_vars['coins'] >= 1:
+        # Get position
+        while True:
+            position = input("Place where? ").upper()
+            if len(position) == 2 and position[0].isalpha() and position[1].isdigit():
+                break
+            else:
+                print('Enter row letter followed by column number.')
+                continue
+        # Place building (or cancel if it cannot be placed there)
+        if not place_building(loc_field, position, selected):
+            print("Invalid position.")
+            return False
+    else:  # Not enough coins
+        print("Not enough coins.")
+        return False
+    # Pay for building if it is placed
+    loc_field["coins"] -= 1
+    return True
 
 
-def show_building_menu(game_vars):
+def show_turn_actions():
     # Print options
-    print("1. Buy unit     2. End turn     3. Upgrade unit")
-    print("4. Save game    5. Quit")
+    print("1. Build a Building")
+    print("2. See Current Score")
+    print("3. Save Game")
+    print("4. Exit to Main Menu")
+    await_user()
     # Get what user wants to do
-    option = get_input(5)
-    return option
+    loc_option = get_input(4)
+    return loc_option
 
 
-def place_unit(field, position, unit_name):
-    row, col = position
-    field[row][col] = building_name
+def check_valid_pos(loc_row, loc_col, loc_field):
+    num_rows, num_cols = len(loc_field), len(loc_field[0])
+    if (0 <= loc_row <= num_rows and
+            0 <= loc_col <= num_cols and
+            loc_field[row][col] != ''):
+        return True
+    return False
+
+
+def place_building(loc_field, position, building_name):
+    # Declare local variables needed
+    loc_row = ord(position[0]) - 65
+    loc_col = int(position[-1]) - 1
+    pos_valid = check_valid_pos(loc_row, loc_col, loc_field)
+    if pos_valid:
+        loc_field[loc_row][loc_col] = buildings[building_name]
+        return pos_valid
 
 
 def show_high_scores():
@@ -124,18 +159,32 @@ def show_high_scores():
     await_user()
 
 
-def run_turn(loc_game_vars):
+def run_turn(loc_game_vars, loc_field):
     # PRE-TURN PHASE
     loc_game_vars['turn'] += 1
-    draw_field(game_vars, field)
+    draw_field(loc_game_vars, loc_field)
 
-    # BUY PHASE
+    # MAIN PHASE
     # TODO: move player actions here from draw_field()
+    # Execute player's actions
+    turn_executed = False
+    while not turn_executed:
+        # Perform actions according to player's input
+        selected_option = show_turn_actions()
+        if selected_option == 1:
+            turn_executed = buy_building(loc_game_vars, loc_field)
+        elif selected_option == 2:
+            print(f"Current Score: {current_score}")
+        elif selected_option == 3:
+            save_game(loc_game_vars, loc_field)
+        elif selected_option == 4:
+            game_vars["game_over"] = True
 
     # CLEANUP PHASE
     # TODO: recalculate score, autosave
 
     await_user()
+
 
 def update_high_scores(score, player_name="Anonymous"):
     try:
@@ -146,8 +195,25 @@ def update_high_scores(score, player_name="Anonymous"):
 
 
 def calculate_score():
-    # Implement the scoring logic based on the specified rules
+    # TODO: Implement the scoring logic based on the specified rules
     # (Residential, Industry, Commercial, Park, Road effects)
+    pass
+
+
+# Load the game from a save file
+def load_game(loc_game_vars, loc_field):
+    # TODO: Implement load save function
+    pass
+
+
+def save_game(loc_game_vars, loc_field):
+    # TODO: Implement save function
+    pass
+
+
+# Initialise variables for a new game
+def start_game(loc_game_vars, loc_field):
+    # TODO: Initialise variables
     pass
 
 
@@ -159,21 +225,24 @@ if __name__ == "__main__":
         print("Build it Better!\n")
         game_playing = False
         while not game_playing:
-            main_option = show_main_menu()
+            selected_action = show_main_menu()
 
-            if main_option == 1:
+            if selected_action == 1:
                 game_playing = True
                 # TODO: initialise game
-            elif main_option == 2:  # TODO: add load_game(game_vars) to this condition later
-                game_playing = not game_playing
-            elif main_option == 3:
+                start_game(game_vars, field)
+            elif selected_action == 2:
+                game_playing = True
+                # TODO: add load_game(game_vars) to this condition later
+                load_game(game_vars, field)
+            elif selected_action == 3:
                 show_high_scores()
-            elif main_option == 4:
+            elif selected_action == 4:
                 raise SystemExit
 
         while not game_vars["game_over"]:
             # TODO: implement turn-to-turn gameplay logic
-            run_turn(game_vars)
+            run_turn(game_vars, field)
             # Playing the game
             draw_field(loc_game_vars, loc_field)
             print("\nOptions:")
@@ -187,7 +256,7 @@ if __name__ == "__main__":
             if option == 1:
                 # Build a Building
                 show_building_types()
-                building_option = building_given()
+                building_option = buy_building()
                 row = int(input("Enter row (1-20): ")) - 1
                 col = int(input("Enter column (1-20): ")) - 1
                 place_building(field, (row, col), building_option)
@@ -216,7 +285,6 @@ if __name__ == "__main__":
             update_high_scores(final_score, player_name)
 
         await_user()
-
 
 # -----------------------------------------
 # save_game()
