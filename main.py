@@ -5,7 +5,7 @@ game_vars = {
     "turn": 0,
     "coins": 10,
     "score": 0,
-    "game_over": False,
+    "game_state": "MENU",  # Can be MENU, PLAYING or OVER
 }
 
 field = [['' for _ in range(20)] for _ in range(20)]
@@ -102,7 +102,7 @@ def buy_building(loc_game_vars, loc_field):
         print("Not enough coins.")
         return False
     # Pay for building if it is placed
-    loc_field["coins"] -= 1
+    loc_game_vars["coins"] -= 1
     return True
 
 
@@ -122,7 +122,7 @@ def check_valid_pos(loc_row, loc_col, loc_field):
     num_rows, num_cols = len(loc_field), len(loc_field[0])
     if (0 <= loc_row <= num_rows and
             0 <= loc_col <= num_cols and
-            loc_field[row][col] != ''):
+            loc_field[loc_row][loc_col] == ''):
         return True
     return False
 
@@ -160,12 +160,12 @@ def show_high_scores():
 
 
 def run_turn(loc_game_vars, loc_field):
+    # TODO: implement turn-to-turn gameplay logic
     # PRE-TURN PHASE
     loc_game_vars['turn'] += 1
     draw_field(loc_game_vars, loc_field)
 
     # MAIN PHASE
-    # TODO: move player actions here from draw_field()
     # Execute player's actions
     turn_executed = False
     while not turn_executed:
@@ -174,14 +174,14 @@ def run_turn(loc_game_vars, loc_field):
         if selected_option == 1:
             turn_executed = buy_building(loc_game_vars, loc_field)
         elif selected_option == 2:
-            print(f"Current Score: {current_score}")
+            print(f"Current Score: {calculate_score()}")
         elif selected_option == 3:
             save_game(loc_game_vars, loc_field)
         elif selected_option == 4:
-            game_vars["game_over"] = True
+            loc_game_vars['game_state'] = "MENU"
 
     # CLEANUP PHASE
-    # TODO: recalculate score, autosave
+    # TODO: recalculate score, check game over (change state to OVER), autosave
 
     await_user()
 
@@ -195,25 +195,25 @@ def update_high_scores(score, player_name="Anonymous"):
 
 
 def calculate_score():
-    # TODO: Implement the scoring logic based on the specified rules
+    # TODO: implement the scoring logic based on the specified rules
     # (Residential, Industry, Commercial, Park, Road effects)
     pass
 
 
 # Load the game from a save file
 def load_game(loc_game_vars, loc_field):
-    # TODO: Implement load save function
+    # TODO: implement load save function
     pass
 
 
 def save_game(loc_game_vars, loc_field):
-    # TODO: Implement save function
+    # TODO: implement save function
     pass
 
 
 # Initialise variables for a new game
 def start_game(loc_game_vars, loc_field):
-    # TODO: Initialise variables
+    # TODO: initialise variables
     pass
 
 
@@ -223,68 +223,63 @@ if __name__ == "__main__":
         print("Ngee Ann City")
         print("-------------")
         print("Build it Better!\n")
-        game_playing = False
-        while not game_playing:
+        while game_vars["game_state"] == "MENU":
             selected_action = show_main_menu()
-
             if selected_action == 1:
-                game_playing = True
-                # TODO: initialise game
+                game_vars["game_state"] = "PLAYING"
                 start_game(game_vars, field)
             elif selected_action == 2:
-                game_playing = True
-                # TODO: add load_game(game_vars) to this condition later
+                game_vars["game_state"] = "PLAYING"
                 load_game(game_vars, field)
             elif selected_action == 3:
                 show_high_scores()
             elif selected_action == 4:
                 raise SystemExit
 
-        while not game_vars["game_over"]:
-            # TODO: implement turn-to-turn gameplay logic
+        while game_vars["game_state"] == "PLAYING":
             run_turn(game_vars, field)
-            # Playing the game
-            draw_field(loc_game_vars, loc_field)
-            print("\nOptions:")
-            print("1. Build a Building")
-            print("2. See Current Score")
-            print("3. Save Game")
-            print("4. Exit to Main Menu")
-
-            option = get_input(4)
-
-            if option == 1:
-                # Build a Building
-                show_building_types()
-                building_option = buy_building()
-                row = int(input("Enter row (1-20): ")) - 1
-                col = int(input("Enter column (1-20): ")) - 1
-                place_building(field, (row, col), building_option)
-                game_vars["coins"] -= 1  # Decrement coins after building
-
-            elif option == 2:
-                # See Current Score
-                current_score = calculate_score()
-                print(f"Current Score: {current_score}")
-
-            elif option == 3:
-                # Save Game
-                save_game()
-
-            elif option == 4:
-                # Exit to Main Menu
-                game_vars["game_over"] = True
-
-        # End of Game
-        final_score = calculate_score()
-        print(f"Game Over! Final Score: {final_score}")
-
-        # Update high scores if necessary
-        if final_score > 0:
-            player_name = input("Congratulations! You made it to the top 10! Enter your name: ")
-            update_high_scores(final_score, player_name)
-
-        await_user()
+        #     # Playing the game
+        #     draw_field(loc_game_vars, loc_field)
+        #     print("\nOptions:")
+        #     print("1. Build a Building")
+        #     print("2. See Current Score")
+        #     print("3. Save Game")
+        #     print("4. Exit to Main Menu")
+        #
+        #     option = get_input(4)
+        #
+        #     if option == 1:
+        #         # Build a Building
+        #         show_building_types()
+        #         building_option = buy_building()
+        #         row = int(input("Enter row (1-20): ")) - 1
+        #         col = int(input("Enter column (1-20): ")) - 1
+        #         place_building(field, (row, col), building_option)
+        #         game_vars["coins"] -= 1  # Decrement coins after building
+        #
+        #     elif option == 2:
+        #         # See Current Score
+        #         current_score = calculate_score()
+        #         print(f"Current Score: {current_score}")
+        #
+        #     elif option == 3:
+        #         # Save Game
+        #         save_game()
+        #
+        #     elif option == 4:
+        #         # Exit to Main Menu
+        #         game_vars["game_over"] = True
+        #
+        # # End of Game
+        # final_score = calculate_score()
+        # print(f"Game Over! Final Score: {final_score}")
+        #
+        # # Update high scores if necessary
+        # if final_score > 0:
+        #     player_name = input("Congratulations! You made it to the top 10! Enter your name: ")
+        #     update_high_scores(final_score, player_name)
+        #
+        # await_user()
 
 # -----------------------------------------
 # save_game()
