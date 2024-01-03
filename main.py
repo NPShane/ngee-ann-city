@@ -178,7 +178,8 @@ def run_turn(loc_game_vars, loc_field):
         elif selected_option == 3:
             save_game(loc_game_vars, loc_field)
         elif selected_option == 4:
-            loc_game_vars['game_state'] = "MENU"
+            loc_game_vars["game_state"] = "MENU"
+            turn_executed = True
 
     # CLEANUP PHASE
     # TODO: recalculate score, check game over (change state to OVER), autosave
@@ -203,12 +204,52 @@ def calculate_score():
 # Load the game from a save file
 def load_game(loc_game_vars, loc_field):
     # TODO: implement load save function
-    pass
+    # Find save file
+    try:
+        file = open('save.txt')
+    except FileNotFoundError:
+        print('No save file to load from.')
+        return False
+    # Dissect save file
+    file_list = file.read().split('\n\n')[:-1]
+    field_list = file_list.pop().split('\n')
+    var_list = file_list.pop().split(',')[:-1]
+    # Reconstruct game_vars
+    count = 0
+    for var in loc_game_vars:
+        # Account for ints and others (strings)
+        if var_list[count].isdigit():
+            loc_game_vars[var] = int(var_list[count])
+        else:
+            loc_game_vars[var] = var_list[count]
+        count += 1
+    # Reconstruct field
+    for row_num in range(len(field_list)):
+        load_row = field_list[row_num].split(',')[:-1]
+        for col_num in range(len(load_row)):
+            loc_field[row_num][col_num] = load_row[col_num]
+    file.close()
+    return True
 
 
 def save_game(loc_game_vars, loc_field):
     # TODO: implement save function
-    pass
+    file = open("save.txt", "w")
+    # Store game_vars
+    for var in loc_game_vars.values():
+        file.write(str(var))
+        file.write(',')
+    file.write("\n\n")
+    # Store field
+    for row in loc_field:
+        for place in row:
+            if place != "":
+                file.write(str(place))
+            file.write(",")
+        file.write("\n")
+    file.write('\n')
+    print('Game saved.')
+    file.close()
 
 
 # Initialise variables for a new game
@@ -280,103 +321,3 @@ if __name__ == "__main__":
         #     update_high_scores(final_score, player_name)
         #
         # await_user()
-
-# -----------------------------------------
-# save_game()
-#
-#    Saves the game in the file 'save.txt'
-# -----------------------------------------
-# def save_game():
-# file = open('save.txt', 'w')
-# Store game_vars
-# for var in game_vars.values():
-# file.write(str(var))
-# file.write(',')
-# file.write('\n\n')
-# Then store field
-# for row in field:
-# for unit in row:
-# if unit:
-# for attribute in unit.values():
-# file.write(str(attribute))
-# file.write(',')
-# else:
-# file.write('None')
-# file.write(';')
-# file.write('\n')
-# file.write('\n')
-# Then save player settings
-# for setting in player_defined_vars.values():
-# file.write(str(setting[0]))
-# file.write(',')
-# print("Game saved.")
-# file.close()
-
-# -----------------------------------------
-# load_game()
-#
-#    Loads the game from 'save.txt'
-# -----------------------------------------
-# def load_game(game_vars):
-# try:
-# file = open('save.txt')
-# except FileNotFoundError:
-# print('No save file to load from.')
-# return False
-# file_list = file.read().split('\n\n')
-# setting_list = file_list.pop().split(',')[:-1]
-# field_list = file_list.pop().split('\n')
-# var_list = file_list.pop().split(',')[:-1]
-# Load in game_vars from save
-# count = 0
-# for var in game_vars:
-# if var_list[count].isdigit():
-# game_vars[var] = int(var_list[count])
-# elif var_list[count] == 'False':
-# game_vars[var] = False
-# elif var_list[count] == 'True':
-# game_vars[var] = True
-# count += 1
-# Ready vars for use
-# game_vars['turn'] -= 1
-# for i in range(game_vars['danger_level']-1):
-# for monster in monsters.values():
-# monster['maxHP'] += 1
-# monster['min_damage'] += 1
-# monster['max_damage'] += 1
-# monster['reward'] += 1
-# Load in player settings and change other stuff using them
-# count = 0
-# for var in player_defined_vars:
-# player_defined_vars[var][0] = int(setting_list[count])
-# count += 1
-# global field
-# field = []
-# for row in range(player_defined_vars['board_width'][0]):
-# field.append([])
-# for column in range(player_defined_vars['board_length'][0]):
-# field[row].append(None)
-# Load in field from save
-# for row_num in range(len(field_list)):
-# load_row = field_list[row_num].split(';')[:-1]
-# for col_num in range(len(load_row)):
-# load_space = load_row[col_num].split(',')
-# if load_space[0] != 'None':
-# unit = {}
-# unit['name'] = load_space[0]
-# unit['short_name'] = load_space[1]
-# unit['maxHP'] = int(load_space[2])
-# unit['HP'] = int(load_space[3])
-# unit['min_damage'] = int(load_space[4])
-# unit['max_damage'] = int(load_space[5])
-# if unit['short_name'] in defenders:
-# unit['price'] = int(load_space[6])
-# if unit['short_name'] == 'CANON':
-# unit['fire_cycle'] = load_space[7]
-# else:
-# unit['reward'] = int(load_space[6])
-# field[row_num][col_num] = unit
-# else:
-# field[row_num][col_num] = None
-# file.close()
-# return True
