@@ -174,7 +174,7 @@ def run_turn(loc_game_vars, loc_field):
         if selected_option == 1:
             turn_executed = buy_building(loc_game_vars, loc_field)
         elif selected_option == 2:
-            print(f"Current Score: {calculate_score(loc_field)}")
+            print(f"Current Score: {calculate_score(loc_field, loc_game_vars)}")
         elif selected_option == 3:
             save_game(loc_game_vars, loc_field)
         elif selected_option == 4:
@@ -195,82 +195,143 @@ def update_high_scores(score, player_name="Anonymous"):
         print(f"An error occurred while updating high scores: {e}")
 
 
-def calculate_score(loc_field):
-    # TODO: implement the scoring logic based on the specified rules
-    # (Residential, Industry, Commercial, Park, Road effects)
-    total_score = 0
+#def calculate_score(loc_field):
+#    # TODO: implement the scoring logic based on the specified rules
+#    # (Residential, Industry, Commercial, Park, Road effects)
+#    total_score = 0
 
+#    for row in range(len(loc_field)):
+#        for col in range(len(loc_field[row])):
+#            building = loc_field[row][col]
+
+#            if building == "R":
+#                total_score += calculate_residential_score(loc_field, row, col)
+#            elif building == "I":
+#                total_score += calculate_industry_score(loc_field, row, col)
+#            elif building == "C":
+#                total_score += calculate_commercial_score(loc_field, row, col)
+#            elif building == "O":
+#                total_score += calculate_park_score(loc_field, row, col)
+#            elif building == "*":
+#                total_score += calculate_road_score(loc_field, row, col)
+
+#    return total_score
+
+#def calculate_residential_score(loc_field, row, col):
+#    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
+#    industry_nearby = any(building == "I" for building in adjacent_buildings)
+    
+#    if industry_nearby:
+#        return 1
+#    else:
+#        residential_count = adjacent_buildings.count("R")
+#        commercial_count = adjacent_buildings.count("C")
+#        park_count = adjacent_buildings.count("O")
+#        return residential_count + 2 * park_count + commercial_count
+
+
+#def calculate_industry_score(loc_field, row, col):
+#    industry_count = sum(1 for row in loc_field for building in row if building == "I")
+#    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
+    
+#    return industry_count + adjacent_residential_count
+
+
+#def calculate_commercial_score(loc_field, row, col):
+#    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
+#    return adjacent_residential_count
+
+
+#def calculate_park_score(loc_field, row, col):
+#    adjacent_park_count = count_adjacent_buildings(loc_field, row, col, "O")
+#    return adjacent_park_count
+
+
+#def calculate_road_score(loc_field, row, col):
+#    connected_road_count = count_connected_roads(loc_field, row)
+#    return connected_road_count
+
+
+#def get_adjacent_buildings(loc_field, row, col):
+#    num_rows, num_cols = len(loc_field), len(loc_field[0])
+#    adjacent_buildings = []
+
+#    for i in range(row - 1, row + 2):
+#        for j in range(col - 1, col + 2):
+#            if 0 <= i < num_rows and 0 <= j < num_cols and not (i == row and j == col):
+#                adjacent_buildings.append(loc_field[i][j])
+
+#    return adjacent_buildings
+
+
+#def count_adjacent_buildings(loc_field, row, col, building_type):
+#    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
+#    return adjacent_buildings.count(building_type)
+
+
+#def count_connected_roads(loc_field, row):
+#    return loc_field[row].count("*")
+
+def calculate_score(loc_field, loc_game_vars):
+    score = 0
+
+    # Helper function to check if a position is valid and contains a specific building type
+    def is_valid_position(row, col, building_type):
+        return 0 <= row < len(loc_field) and 0 <= col < len(loc_field[0]) and loc_field[row][col] == building_type
+
+    # Iterate through each cell in the city
     for row in range(len(loc_field)):
-        for col in range(len(loc_field[row])):
-            building = loc_field[row][col]
+        for col in range(len(loc_field[0])):
+            current_building = loc_field[row][col]
 
-            if building == "R":
-                total_score += calculate_residential_score(loc_field, row, col)
-            elif building == "I":
-                total_score += calculate_industry_score(loc_field, row, col)
-            elif building == "C":
-                total_score += calculate_commercial_score(loc_field, row, col)
-            elif building == "O":
-                total_score += calculate_park_score(loc_field, row, col)
-            elif building == "*":
-                total_score += calculate_road_score(loc_field, row, col)
+            if current_building == "R":
+                adjacent_buildings = [
+                    (row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)
+                ]
 
-    return total_score
+                for adj_row, adj_col in adjacent_buildings:
+                    if is_valid_position(adj_row, adj_col, "I"):
+                        score += 1
+                        break  # Score 1 point if next to an industry
+                else:
+                    # If not next to an industry, score based on other adjacent buildings
+                    for adj_row, adj_col in adjacent_buildings:
+                        if is_valid_position(adj_row, adj_col, "R") or is_valid_position(adj_row, adj_col, "C"):
+                            score += 1
+                        elif is_valid_position(adj_row, adj_col, "O"):
+                            score += 2
 
-def calculate_residential_score(loc_field, row, col):
-    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
-    industry_nearby = any(building == "I" for building in adjacent_buildings)
-    
-    if industry_nearby:
-        return 1
-    else:
-        residential_count = adjacent_buildings.count("R")
-        commercial_count = adjacent_buildings.count("C")
-        park_count = adjacent_buildings.count("O")
-        return residential_count + 2 * park_count + commercial_count
+            elif current_building == "I":
+                # Score 1 point per industry
+                score += 1
 
+                # Generate 1 coin per adjacent residential building
+                adjacent_buildings = [
+                    (row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)
+                ]
 
-def calculate_industry_score(loc_field, row, col):
-    industry_count = sum(1 for row in loc_field for building in row if building == "I")
-    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
-    
-    return industry_count + adjacent_residential_count
+                for adj_row, adj_col in adjacent_buildings:
+                    if is_valid_position(adj_row, adj_col, "R"):
+                        loc_game_vars["coins"] += 1
 
+            elif current_building == "C":
+                # Score 1 point per commercial
+                score += 1
 
-def calculate_commercial_score(loc_field, row, col):
-    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
-    return adjacent_residential_count
+                # Generate 1 coin per adjacent residential building
+                adjacent_buildings = [
+                    (row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)
+                ]
 
+                for adj_row, adj_col in adjacent_buildings:
+                    if is_valid_position(adj_row, adj_col, "R"):
+                        loc_game_vars["coins"] += 1
 
-def calculate_park_score(loc_field, row, col):
-    adjacent_park_count = count_adjacent_buildings(loc_field, row, col, "O")
-    return adjacent_park_count
+            elif current_building == "O":
+                # Score 1 point per park
+                score += 1
 
-
-def calculate_road_score(loc_field, row, col):
-    connected_road_count = count_connected_roads(loc_field, row)
-    return connected_road_count
-
-
-def get_adjacent_buildings(loc_field, row, col):
-    num_rows, num_cols = len(loc_field), len(loc_field[0])
-    adjacent_buildings = []
-
-    for i in range(row - 1, row + 2):
-        for j in range(col - 1, col + 2):
-            if 0 <= i < num_rows and 0 <= j < num_cols and not (i == row and j == col):
-                adjacent_buildings.append(loc_field[i][j])
-
-    return adjacent_buildings
-
-
-def count_adjacent_buildings(loc_field, row, col, building_type):
-    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
-    return adjacent_buildings.count(building_type)
-
-
-def count_connected_roads(loc_field, row):
-    return loc_field[row].count("*")
+    return score
 
 
 # Load the game from a save file
