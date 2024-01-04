@@ -3,7 +3,7 @@ import time
 
 game_vars = {
     "turn": 0,
-    "coins": 10,
+    "coins": 16,
     "score": 0,
     "game_state": "MENU",  # Can be MENU, PLAYING or OVER
 }
@@ -174,7 +174,7 @@ def run_turn(loc_game_vars, loc_field):
         if selected_option == 1:
             turn_executed = buy_building(loc_game_vars, loc_field)
         elif selected_option == 2:
-            print(f"Current Score: {calculate_score()}")
+            print(f"Current Score: {calculate_score(loc_field)}")
         elif selected_option == 3:
             save_game(loc_game_vars, loc_field)
         elif selected_option == 4:
@@ -195,10 +195,82 @@ def update_high_scores(score, player_name="Anonymous"):
         print(f"An error occurred while updating high scores: {e}")
 
 
-def calculate_score():
+def calculate_score(loc_field):
     # TODO: implement the scoring logic based on the specified rules
     # (Residential, Industry, Commercial, Park, Road effects)
-    pass
+    total_score = 0
+
+    for row in range(len(loc_field)):
+        for col in range(len(loc_field[row])):
+            building = loc_field[row][col]
+
+            if building == "R":
+                total_score += calculate_residential_score(loc_field, row, col)
+            elif building == "I":
+                total_score += calculate_industry_score(loc_field, row, col)
+            elif building == "C":
+                total_score += calculate_commercial_score(loc_field, row, col)
+            elif building == "O":
+                total_score += calculate_park_score(loc_field, row, col)
+            elif building == "*":
+                total_score += calculate_road_score(loc_field, row, col)
+
+    return total_score
+
+def calculate_residential_score(loc_field, row, col):
+    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
+    industry_nearby = any(building == "I" for building in adjacent_buildings)
+    
+    if industry_nearby:
+        return 1
+    else:
+        residential_count = adjacent_buildings.count("R")
+        commercial_count = adjacent_buildings.count("C")
+        park_count = adjacent_buildings.count("O")
+        return residential_count + 2 * park_count + commercial_count
+
+
+def calculate_industry_score(loc_field, row, col):
+    industry_count = sum(1 for row in loc_field for building in row if building == "I")
+    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
+    
+    return industry_count + adjacent_residential_count
+
+
+def calculate_commercial_score(loc_field, row, col):
+    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
+    return adjacent_residential_count
+
+
+def calculate_park_score(loc_field, row, col):
+    adjacent_park_count = count_adjacent_buildings(loc_field, row, col, "O")
+    return adjacent_park_count
+
+
+def calculate_road_score(loc_field, row, col):
+    connected_road_count = count_connected_roads(loc_field, row)
+    return connected_road_count
+
+
+def get_adjacent_buildings(loc_field, row, col):
+    num_rows, num_cols = len(loc_field), len(loc_field[0])
+    adjacent_buildings = []
+
+    for i in range(row - 1, row + 2):
+        for j in range(col - 1, col + 2):
+            if 0 <= i < num_rows and 0 <= j < num_cols and not (i == row and j == col):
+                adjacent_buildings.append(loc_field[i][j])
+
+    return adjacent_buildings
+
+
+def count_adjacent_buildings(loc_field, row, col, building_type):
+    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
+    return adjacent_buildings.count(building_type)
+
+
+def count_connected_roads(loc_field, row):
+    return loc_field[row].count("*")
 
 
 # Load the game from a save file
@@ -255,7 +327,33 @@ def save_game(loc_game_vars, loc_field):
 # Initialise variables for a new game
 def start_game(loc_game_vars, loc_field):
     # TODO: initialise variables
-    pass
+    # Initialize game variables
+    loc_game_vars["turn"] = 0
+    loc_game_vars["coins"] = 16
+    loc_game_vars["score"] = 0
+    loc_game_vars["game_state"] = "PLAYING"
+
+    # Clear the game field
+    for i in range(len(loc_field)):
+        for j in range(len(loc_field[0])):
+            loc_field[i][j] = ''
+
+    # Choose two initial buildings
+    #initial_buildings = random.sample([*buildings], 2)
+
+    # Display initial information
+    print("Welcome to Ngee Ann City!")
+    print("You are the mayor. Build the happiest and most prosperous city!")
+    print(f"Starting with {loc_game_vars['coins']} coins.")
+
+    # Display the initial buildings
+    #print("Initial Buildings:")
+    #print(f"1. {initial_buildings[0]}")
+    #print(f"2. {initial_buildings[1]}")
+
+    # Display the game instructions or any additional information if needed
+
+    await_user()
 
 
 # Main game loop, displays main menu then changes game state if a game has been started
