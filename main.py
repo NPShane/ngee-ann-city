@@ -178,6 +178,7 @@ def run_turn(loc_game_vars, loc_field):
         elif selected_option == 3:
             save_game(loc_game_vars, loc_field)
         elif selected_option == 4:
+            #end_of_game(loc_game_vars, loc_field)
             loc_game_vars["game_state"] = "MENU"
             turn_executed = True
 
@@ -185,14 +186,6 @@ def run_turn(loc_game_vars, loc_field):
     # TODO: recalculate score, check game over (change state to OVER), autosave
 
     await_user()
-
-
-def update_high_scores(score, player_name="Anonymous"):
-    try:
-        with open('high_scores.txt', 'a') as file:
-            file.write(f"{player_name} {score}\n")
-    except Exception as e:
-        print(f"An error occurred while updating high scores: {e}")
 
 
 #def calculate_score(loc_field):
@@ -415,6 +408,75 @@ def start_game(loc_game_vars, loc_field):
     # Display the game instructions or any additional information if needed
 
     await_user()
+
+
+def end_of_game(loc_game_vars, loc_field):
+    # TODO: implement end-of-game logic
+    score = calculate_score(loc_field, loc_game_vars)
+    print(f"Game Over! Your final score is: {score}")
+
+    # Check if the score is high enough for the high score list
+    high_scores = load_high_scores()
+    if is_high_score(score, high_scores):
+        print("Congratulations! You've made it to the high score list!")
+        player_name = input("Enter your name: ")
+        update_high_scores(score, player_name)
+
+    # Reset game variables and return to the main menu
+    reset_game(loc_game_vars, loc_field)
+
+
+def reset_game(loc_game_vars, loc_field):
+    # TODO: reset game variables and return to the main menu
+    loc_game_vars["turn"] = 0
+    loc_game_vars["coins"] = 16
+    loc_game_vars["score"] = 0
+    loc_game_vars["game_state"] = "MENU"
+
+    # Clear the game field
+    for i in range(len(loc_field)):
+        for j in range(len(loc_field[0])):
+            loc_field[i][j] = ''
+
+    await_user()
+
+
+def is_high_score(score, high_scores):
+    # TODO: implement logic to check if the score is high enough for the high score list
+    return len(high_scores) < 5 or score > high_scores[-1][1]
+
+
+def load_high_scores():
+    # TODO: implement logic to load high scores from the file
+    try:
+        with open('high_scores.txt', 'r') as file:
+            scores = [line.strip().split() for line in file.readlines()]
+        return scores
+    except FileNotFoundError:
+        return []
+    except Exception as e:
+        print(f"An error occurred while loading high scores: {e}")
+        return []
+
+
+#def update_high_scores(score, player_name="Anonymous"):
+#    try:
+#        with open('high_scores.txt', 'a') as file:
+#            file.write(f"{player_name} {score}\n")
+#    except Exception as e:
+#        print(f"An error occurred while updating high scores: {e}")
+
+def update_high_scores(score, player_name="Anonymous"):
+    try:
+        scores = load_high_scores()
+        scores.append((player_name, score))
+        scores.sort(key=lambda x: x[1], reverse=True)
+        scores = scores[:5]  # Keep only the top 5 scores
+        with open('high_scores.txt', 'w') as file:
+            for name, score in scores:
+                file.write(f"{name} {score}\n")
+    except Exception as e:
+        print(f"An error occurred while updating high scores: {e}")
 
 
 # Main game loop, displays main menu then changes game state if a game has been started
