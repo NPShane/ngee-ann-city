@@ -89,7 +89,7 @@ def buy_building(loc_game_vars, loc_field):
         # Get position
         while True:
             position = input("Place where? ").upper()
-            if len(position) == 2 and position[0].isalpha() and position[1].isdigit():
+            if  2 <= len(position) <= 3 and position[0].isalpha() and position[1].isdigit():
                 break
             else:
                 print('Enter row letter followed by column number.')
@@ -130,7 +130,7 @@ def check_valid_pos(loc_row, loc_col, loc_field):
 def place_building(loc_field, position, building_name):
     # Declare local variables needed
     loc_row = ord(position[0]) - 65
-    loc_col = int(position[-1]) - 1
+    loc_col = int(position[1:]) - 1
     pos_valid = check_valid_pos(loc_row, loc_col, loc_field)
     if pos_valid:
         loc_field[loc_row][loc_col] = buildings[building_name]
