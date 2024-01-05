@@ -71,6 +71,7 @@ def draw_field(loc_game_vars, loc_field):
     print(f"{'Turn: ' + str(turn):<15}{'Coins: ' + str(coins)}")
 
 
+# Buys a building then places it, returns T/F if successful
 def buy_building(loc_game_vars, loc_field):
     # Print available buildings
     building_list = [*buildings]  # Advanced syntax: get list of keys from dict
@@ -89,7 +90,7 @@ def buy_building(loc_game_vars, loc_field):
         # Get position
         while True:
             position = input("Place where? ").upper()
-            if  2 <= len(position) <= 3 and position[0].isalpha() and position[1].isdigit():
+            if 2 <= len(position) <= 3 and position[0].isalpha() and position[1].isdigit():
                 break
             else:
                 print('Enter row letter followed by column number.')
@@ -106,6 +107,7 @@ def buy_building(loc_game_vars, loc_field):
     return True
 
 
+# Show turn menu and returns selected option
 def show_turn_actions():
     # Print options
     print("1. Build a Building")
@@ -118,33 +120,34 @@ def show_turn_actions():
     return loc_option
 
 
+# Checks if a given position is valid to be built on
 def check_valid_pos(loc_row, loc_col, loc_field):
+    pos = loc_field[loc_row][loc_col]
     num_rows, num_cols = len(loc_field), len(loc_field[0])
-    if (0 <= loc_row <= num_rows - 1 and
-            0 <= loc_col <= num_cols - 1 and
-            loc_field[loc_row][loc_col] == ''):
-        if game_vars["turn"] != 1:
-            valid = False
-            if count_adjacent_buildings(loc_row, loc_row, loc_col, "") == 0:
-                valid = True
-            if valid:
-                return True
-            else:
-                return False
-        return True
+    # Check within field and empty
+    if 0 <= loc_row <= num_rows - 1 and 0 <= loc_col <= num_cols - 1 and pos == '':
+        # Override if first turn (can place anywhere)
+        if game_vars["turn"] == 1:
+            return True
+        # Check if there is at least one building surrounding this
+        if any(pos != "" for pos in loc_field):
+            return True
     return False
 
 
+# Places down a building, returns T/F depending on success
 def place_building(loc_field, position, building_name):
     # Declare local variables needed
     loc_row = ord(position[0]) - 65
     loc_col = int(position[1:]) - 1
+    # Check position validity
     pos_valid = check_valid_pos(loc_row, loc_col, loc_field)
     if pos_valid:
         loc_field[loc_row][loc_col] = buildings[building_name]
         return pos_valid
 
 
+# Show the high scores from file
 def show_high_scores():
     scores = load_high_scores()
 
@@ -159,6 +162,7 @@ def show_high_scores():
     await_user()
 
 
+# Runs 1 entire turn of the game
 def run_turn(loc_game_vars, loc_field):
     # PRE-TURN PHASE
     loc_game_vars['turn'] += 1
@@ -250,88 +254,64 @@ def run_turn(loc_game_vars, loc_field):
 #    return connected_road_count
 
 
-# def get_adjacent_buildings(loc_field, row, col):
-#    num_rows, num_cols = len(loc_field), len(loc_field[0])
-#    adjacent_buildings = []
-
-#    for i in range(row - 1, row + 2):
-#        for j in range(col - 1, col + 2):
-#            if 0 <= i < num_rows and 0 <= j < num_cols and not (i == row and j == col):
-#                adjacent_buildings.append(loc_field[i][j])
-
-#    return adjacent_buildings
-
-
-# def count_adjacent_buildings(loc_field, row, col, building_type):
-#    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
-#    return adjacent_buildings.count(building_type)
-
-
 # def count_connected_roads(loc_field, row):
 #    return loc_field[row].count("*")
 
+
+# Count the total number of a certain type of building
+def count_total_buildings(loc_field, building_type):
+    count = 0
+    for row in loc_field:
+        for cell in row:
+            if cell == building_type:
+                count += 1
+    return count
+
+
+# Calculates the total score for the current city
 def calculate_score(loc_field, loc_game_vars):
     score = 0
-
-    # Helper function to check if a position is valid and contains a specific building type
-    def is_valid_position(row, col, building_type):
-        return 0 <= row < len(loc_field) and 0 <= col < len(loc_field[0]) and loc_field[row][col] == building_type
+    count_ind = count_total_buildings(loc_field, "I")
 
     # Iterate through each cell in the city
-    for row in range(len(loc_field)):
-        for col in range(len(loc_field[0])):
-            current_building = loc_field[row][col]
-
-            if current_building == "R":
-                adjacent_buildings = [
-                    (row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)
-                ]
-
-                for adj_row, adj_col in adjacent_buildings:
-                    if is_valid_position(adj_row, adj_col, "I"):
+    for row_num, row in enumerate(loc_field):
+        for col_num, building in enumerate(row):
+            # If residential
+            if building == "R":
+                adj_buildings = get_adjacent_buildings(loc_field, row_num, col_num)
+                for adj_building in adj_buildings:
+                    # Score only 1 point if next to an industry
+                    if adj_building == "I":
                         score += 1
-                        break  # Score 1 point if next to an industry
-                else:
+                        break
                     # If not next to an industry, score based on other adjacent buildings
-                    for adj_row, adj_col in adjacent_buildings:
-                        if is_valid_position(adj_row, adj_col, "R") or is_valid_position(adj_row, adj_col, "C"):
-                            score += 1
-                        elif is_valid_position(adj_row, adj_col, "O"):
-                            score += 2
-
-            elif current_building == "I":
-                # Score 1 point per industry
-                score += 1
-
-                # Generate 1 coin per adjacent residential building
-                adjacent_buildings = [
-                    (row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)
-                ]
-
-                for adj_row, adj_col in adjacent_buildings:
-                    if is_valid_position(adj_row, adj_col, "R"):
-                        loc_game_vars["coins"] += 1
-
-            elif current_building == "C":
-                # Score 1 point per commercial
-                score += 1
-
-                # Generate 1 coin per adjacent residential building
-                adjacent_buildings = [
-                    (row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)
-                ]
-
-                for adj_row, adj_col in adjacent_buildings:
-                    if is_valid_position(adj_row, adj_col, "R"):
-                        loc_game_vars["coins"] += 1
-
-            elif current_building == "O":
-                # Score 1 point per park
-                score += 1
+                    elif adj_building == "R" or adj_building == "C":
+                        score += 1
+                    elif adj_building == "O":
+                        score += 2
+            # If industrial, score 1 per ind in city
+            elif building == "I":
+                score += count_ind
+            # If commercial, score 1 per adj com
+            elif building == "C":
+                adj_buildings = get_adjacent_buildings(loc_field, row_num, col_num)
+                for adj_building in adj_buildings:
+                    if adj_building == "C":
+                        score += 1
+            # If park
+            elif building == "O":
+                adj_buildings = get_adjacent_buildings(loc_field, row_num, col_num)
+                for adj_building in adj_buildings:
+                    if adj_building == "O":
+                        score += 1
+            # If road
+            elif building == "*":
+                score += row.count("*")
 
     return score
 
 
+# Finds the 4 buildings around a coordinate
 def get_adjacent_buildings(loc_field, row, col):
     num_rows, num_cols = len(loc_field), len(loc_field[0])
     adjacent_buildings = []
@@ -344,6 +324,7 @@ def get_adjacent_buildings(loc_field, row, col):
     return adjacent_buildings
 
 
+# Count the number of a certain type of building around a coordinate
 def count_adjacent_buildings(loc_field, row, col, building_type):
     adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
     return adjacent_buildings.count(building_type)
@@ -378,6 +359,7 @@ def load_game(loc_game_vars, loc_field):
     return True
 
 
+# Save the game to a save file
 def save_game(loc_game_vars, loc_field):
     file = open("save.txt", "w")
     # Store game_vars
@@ -428,6 +410,7 @@ def start_game(loc_game_vars, loc_field):
     await_user()
 
 
+# End a game and clean up variables
 def end_game(loc_game_vars, loc_field):
     score = calculate_score(loc_field, loc_game_vars)
     print(f"Game Over! Your final score is: {score}")
@@ -443,6 +426,7 @@ def end_game(loc_game_vars, loc_field):
     reset_game(loc_game_vars, loc_field)
 
 
+# Helper function for end_game to clean up
 def reset_game(loc_game_vars, loc_field):
     loc_game_vars["turn"] = 0
     loc_game_vars["coins"] = 16
@@ -457,13 +441,13 @@ def reset_game(loc_game_vars, loc_field):
     await_user()
 
 
+# Check if the high score should be added in
 def is_high_score(score, high_scores):
-    # TODO: implement logic to check if the score is high enough for the high score list
     return len(high_scores) < 10 or score > high_scores[-1][1]
 
 
+# Load high scores and return a list of lists
 def load_high_scores():
-    # TODO: implement logic to load high scores from the file
     try:
         with open('high_scores.txt', 'r') as file:
             scores = [line.strip().split() for line in file.readlines()]
@@ -485,6 +469,8 @@ def load_high_scores():
 #    except Exception as e:
 #        print(f"An error occurred while updating high scores: {e}")
 
+
+# Rewrite high_scores.txt with new player data
 def update_high_scores(score, player_name="Anonymous"):
     try:
         scores = load_high_scores()
