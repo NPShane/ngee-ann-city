@@ -22,7 +22,7 @@ buildings = {
 # Separate console output into chunks for readability
 def await_user():
     print()
-    time.sleep(.25)
+    time.sleep(.5)
 
 
 # Get input from the user, validate before returning
@@ -120,9 +120,17 @@ def show_turn_actions():
 
 def check_valid_pos(loc_row, loc_col, loc_field):
     num_rows, num_cols = len(loc_field), len(loc_field[0])
-    if (0 <= loc_row <= num_rows and
-            0 <= loc_col <= num_cols and
+    if (0 <= loc_row <= num_rows - 1 and
+            0 <= loc_col <= num_cols - 1 and
             loc_field[loc_row][loc_col] == ''):
+        if game_vars["turn"] != 1:
+            valid = False
+            if count_adjacent_buildings(loc_row, loc_row, loc_col, "") == 0:
+                valid = True
+            if valid:
+                return True
+            else:
+                return False
         return True
     return False
 
@@ -138,29 +146,20 @@ def place_building(loc_field, position, building_name):
 
 
 def show_high_scores():
-    try:
-        with open('high_scores.txt', 'r') as file:
-            # Read the content of the file
-            scores = [line.strip().split() for line in file.readlines()]
+    scores = load_high_scores()
 
-        if not scores:
-            print("No high scores available.")
-            return
+    if not scores:
+        print("No high scores available.")
+        return
 
-        print("\nHigh Scores")
-        for name, score in scores:
-            print(f"{name:15}: {score}")
-
-    except FileNotFoundError:
-        print("High scores file not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    print("\nHigh Scores")
+    for name, score in scores:
+        print(f"{name:15}: {score}")
 
     await_user()
 
 
 def run_turn(loc_game_vars, loc_field):
-    # TODO: implement turn-to-turn gameplay logic
     # PRE-TURN PHASE
     loc_game_vars['turn'] += 1
     draw_field(loc_game_vars, loc_field)
@@ -178,18 +177,24 @@ def run_turn(loc_game_vars, loc_field):
         elif selected_option == 3:
             save_game(loc_game_vars, loc_field)
         elif selected_option == 4:
-            #end_of_game(loc_game_vars, loc_field)
             loc_game_vars["game_state"] = "MENU"
             turn_executed = True
 
     # CLEANUP PHASE
-    # TODO: recalculate score, check game over (change state to OVER), autosave
+    # Add coins for each R around a C or I
+    for row_index, row in enumerate(loc_field):
+        for value_index, value in enumerate(row):
+            if value == "C" or value == "I":
+                loc_game_vars["coins"] += count_adjacent_buildings(loc_field, row_index, value_index, "R")
+
+    # End the game if either condition is met
+    if loc_game_vars["coins"] <= 0 or loc_game_vars["turn"] == 400:
+        loc_game_vars["game_state"] = "OVER"
 
     await_user()
 
 
-#def calculate_score(loc_field):
-#    # TODO: implement the scoring logic based on the specified rules
+# def calculate_score(loc_field):
 #    # (Residential, Industry, Commercial, Park, Road effects)
 #    total_score = 0
 
@@ -210,10 +215,10 @@ def run_turn(loc_game_vars, loc_field):
 
 #    return total_score
 
-#def calculate_residential_score(loc_field, row, col):
+# def calculate_residential_score(loc_field, row, col):
 #    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
 #    industry_nearby = any(building == "I" for building in adjacent_buildings)
-    
+
 #    if industry_nearby:
 #        return 1
 #    else:
@@ -223,29 +228,29 @@ def run_turn(loc_game_vars, loc_field):
 #        return residential_count + 2 * park_count + commercial_count
 
 
-#def calculate_industry_score(loc_field, row, col):
+# def calculate_industry_score(loc_field, row, col):
 #    industry_count = sum(1 for row in loc_field for building in row if building == "I")
 #    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
-    
+
 #    return industry_count + adjacent_residential_count
 
 
-#def calculate_commercial_score(loc_field, row, col):
+# def calculate_commercial_score(loc_field, row, col):
 #    adjacent_residential_count = count_adjacent_buildings(loc_field, row, col, "R")
 #    return adjacent_residential_count
 
 
-#def calculate_park_score(loc_field, row, col):
+# def calculate_park_score(loc_field, row, col):
 #    adjacent_park_count = count_adjacent_buildings(loc_field, row, col, "O")
 #    return adjacent_park_count
 
 
-#def calculate_road_score(loc_field, row, col):
+# def calculate_road_score(loc_field, row, col):
 #    connected_road_count = count_connected_roads(loc_field, row)
 #    return connected_road_count
 
 
-#def get_adjacent_buildings(loc_field, row, col):
+# def get_adjacent_buildings(loc_field, row, col):
 #    num_rows, num_cols = len(loc_field), len(loc_field[0])
 #    adjacent_buildings = []
 
@@ -257,12 +262,12 @@ def run_turn(loc_game_vars, loc_field):
 #    return adjacent_buildings
 
 
-#def count_adjacent_buildings(loc_field, row, col, building_type):
+# def count_adjacent_buildings(loc_field, row, col, building_type):
 #    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
 #    return adjacent_buildings.count(building_type)
 
 
-#def count_connected_roads(loc_field, row):
+# def count_connected_roads(loc_field, row):
 #    return loc_field[row].count("*")
 
 def calculate_score(loc_field, loc_game_vars):
@@ -327,9 +332,25 @@ def calculate_score(loc_field, loc_game_vars):
     return score
 
 
+def get_adjacent_buildings(loc_field, row, col):
+    num_rows, num_cols = len(loc_field), len(loc_field[0])
+    adjacent_buildings = []
+
+    for i in range(row - 1, row + 2):
+        for j in range(col - 1, col + 2):
+            if 0 <= i < num_rows and 0 <= j < num_cols and not (i == row and j == col):
+                adjacent_buildings.append(loc_field[i][j])
+
+    return adjacent_buildings
+
+
+def count_adjacent_buildings(loc_field, row, col, building_type):
+    adjacent_buildings = get_adjacent_buildings(loc_field, row, col)
+    return adjacent_buildings.count(building_type)
+
+
 # Load the game from a save file
 def load_game(loc_game_vars, loc_field):
-    # TODO: implement load save function
     # Find save file
     try:
         file = open('save.txt')
@@ -341,14 +362,13 @@ def load_game(loc_game_vars, loc_field):
     field_list = file_list.pop().split('\n')
     var_list = file_list.pop().split(',')[:-1]
     # Reconstruct game_vars
-    count = 0
-    for var in loc_game_vars:
+    for count, var in enumerate(loc_game_vars):
         # Account for ints and others (strings)
         if var_list[count].isdigit():
             loc_game_vars[var] = int(var_list[count])
         else:
             loc_game_vars[var] = var_list[count]
-        count += 1
+    loc_game_vars["turn"] -= 1
     # Reconstruct field
     for row_num in range(len(field_list)):
         load_row = field_list[row_num].split(',')[:-1]
@@ -359,7 +379,6 @@ def load_game(loc_game_vars, loc_field):
 
 
 def save_game(loc_game_vars, loc_field):
-    # TODO: implement save function
     file = open("save.txt", "w")
     # Store game_vars
     for var in loc_game_vars.values():
@@ -380,7 +399,6 @@ def save_game(loc_game_vars, loc_field):
 
 # Initialise variables for a new game
 def start_game(loc_game_vars, loc_field):
-    # TODO: initialise variables
     # Initialize game variables
     loc_game_vars["turn"] = 0
     loc_game_vars["coins"] = 16
@@ -393,7 +411,7 @@ def start_game(loc_game_vars, loc_field):
             loc_field[i][j] = ''
 
     # Choose two initial buildings
-    #initial_buildings = random.sample([*buildings], 2)
+    # initial_buildings = random.sample([*buildings], 2)
 
     # Display initial information
     print("Welcome to Ngee Ann City!")
@@ -401,17 +419,16 @@ def start_game(loc_game_vars, loc_field):
     print(f"Starting with {loc_game_vars['coins']} coins.")
 
     # Display the initial buildings
-    #print("Initial Buildings:")
-    #print(f"1. {initial_buildings[0]}")
-    #print(f"2. {initial_buildings[1]}")
+    # print("Initial Buildings:")
+    # print(f"1. {initial_buildings[0]}")
+    # print(f"2. {initial_buildings[1]}")
 
     # Display the game instructions or any additional information if needed
 
     await_user()
 
 
-def end_of_game(loc_game_vars, loc_field):
-    # TODO: implement end-of-game logic
+def end_game(loc_game_vars, loc_field):
     score = calculate_score(loc_field, loc_game_vars)
     print(f"Game Over! Your final score is: {score}")
 
@@ -427,7 +444,6 @@ def end_of_game(loc_game_vars, loc_field):
 
 
 def reset_game(loc_game_vars, loc_field):
-    # TODO: reset game variables and return to the main menu
     loc_game_vars["turn"] = 0
     loc_game_vars["coins"] = 16
     loc_game_vars["score"] = 0
@@ -443,7 +459,7 @@ def reset_game(loc_game_vars, loc_field):
 
 def is_high_score(score, high_scores):
     # TODO: implement logic to check if the score is high enough for the high score list
-    return len(high_scores) < 5 or score > high_scores[-1][1]
+    return len(high_scores) < 10 or score > high_scores[-1][1]
 
 
 def load_high_scores():
@@ -451,15 +467,18 @@ def load_high_scores():
     try:
         with open('high_scores.txt', 'r') as file:
             scores = [line.strip().split() for line in file.readlines()]
+            file.close()
+        for score_set in scores:
+            score_set[1] = int(score_set[1])
         return scores
     except FileNotFoundError:
-        return []
+        return
     except Exception as e:
         print(f"An error occurred while loading high scores: {e}")
-        return []
+        return
 
 
-#def update_high_scores(score, player_name="Anonymous"):
+# def update_high_scores(score, player_name="Anonymous"):
 #    try:
 #        with open('high_scores.txt', 'a') as file:
 #            file.write(f"{player_name} {score}\n")
@@ -469,9 +488,9 @@ def load_high_scores():
 def update_high_scores(score, player_name="Anonymous"):
     try:
         scores = load_high_scores()
-        scores.append((player_name, score))
+        scores.append([player_name, score])
         scores.sort(key=lambda x: x[1], reverse=True)
-        scores = scores[:5]  # Keep only the top 5 scores
+        scores = scores[:10]  # Keep only the top  scores
         with open('high_scores.txt', 'w') as file:
             for name, score in scores:
                 file.write(f"{name} {score}\n")
@@ -488,10 +507,8 @@ if __name__ == "__main__":
         while game_vars["game_state"] == "MENU":
             selected_action = show_main_menu()
             if selected_action == 1:
-                game_vars["game_state"] = "PLAYING"
                 start_game(game_vars, field)
             elif selected_action == 2:
-                game_vars["game_state"] = "PLAYING"
                 load_game(game_vars, field)
             elif selected_action == 3:
                 show_high_scores()
@@ -500,45 +517,6 @@ if __name__ == "__main__":
 
         while game_vars["game_state"] == "PLAYING":
             run_turn(game_vars, field)
-        #     # Playing the game
-        #     draw_field(loc_game_vars, loc_field)
-        #     print("\nOptions:")
-        #     print("1. Build a Building")
-        #     print("2. See Current Score")
-        #     print("3. Save Game")
-        #     print("4. Exit to Main Menu")
-        #
-        #     option = get_input(4)
-        #
-        #     if option == 1:
-        #         # Build a Building
-        #         show_building_types()
-        #         building_option = buy_building()
-        #         row = int(input("Enter row (1-20): ")) - 1
-        #         col = int(input("Enter column (1-20): ")) - 1
-        #         place_building(field, (row, col), building_option)
-        #         game_vars["coins"] -= 1  # Decrement coins after building
-        #
-        #     elif option == 2:
-        #         # See Current Score
-        #         current_score = calculate_score()
-        #         print(f"Current Score: {current_score}")
-        #
-        #     elif option == 3:
-        #         # Save Game
-        #         save_game()
-        #
-        #     elif option == 4:
-        #         # Exit to Main Menu
-        #         game_vars["game_over"] = True
-        #
-        # # End of Game
-        # final_score = calculate_score()
-        # print(f"Game Over! Final Score: {final_score}")
-        #
-        # # Update high scores if necessary
-        # if final_score > 0:
-        #     player_name = input("Congratulations! You made it to the top 10! Enter your name: ")
-        #     update_high_scores(final_score, player_name)
-        #
-        # await_user()
+
+        if game_vars["game_state"] == "OVER":
+            end_game(game_vars, field)
